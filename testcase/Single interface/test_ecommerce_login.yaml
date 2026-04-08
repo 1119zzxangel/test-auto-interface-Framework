@@ -1,0 +1,15 @@
+name: "用户登录"
+description: "测试用户登录功能，获取JWT Token"
+url: "http://localhost:5000/api/login"
+method: "POST"
+headers:
+  Content-Type: "application/json"
+json:
+  username: "user1"
+  password: "123456"
+validate:
+  - equals: {"code": 200}
+  - contains: {"text": "token"}
+extract:
+  token: "$.data.token"
+  user_id: "$.data.user.id"

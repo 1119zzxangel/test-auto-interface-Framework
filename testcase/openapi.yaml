@@ -1,0 +1,2292 @@
+openapi: 3.0.3
+info:
+  title: Shopio 电商系统 API 文档
+  version: 1.0.0
+  description: |
+    Shopio 电商系统完整 API 文档
+    - 用户端 API：普通用户购物、订单、个人中心等功能
+    - 管理端 API：管理员商品、订单、用户、数据统计等管理功能
+  contact:
+    name: Shopio Team
+servers:
+  - url: http://localhost:5000
+    description: 本地开发服务器
+
+# 安全认证
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Token 认证，格式：Bearer {token}
+
+  schemas:
+    # 通用响应
+    ApiResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 响应码，0表示成功
+        message:
+          type: string
+          description: 响应消息
+        data:
+          type: object
+          description: 响应数据
+
+    # 分页响应
+    PageResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            list:
+              type: array
+              items:
+                type: object
+            total:
+              type: integer
+              description: 总记录数
+            page:
+              type: integer
+              description: 当前页码
+            per_page:
+              type: integer
+              description: 每页数量
+            pages:
+              type: integer
+              description: 总页数
+
+    # 用户模型
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        nickname:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        avatar:
+          type: string
+        status:
+          type: integer
+          description: 0-禁用，1-启用
+        created_at:
+          type: string
+          format: date-time
+
+    # 管理员模型
+    Admin:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        avatar:
+          type: string
+        role:
+          type: string
+          enum: [admin, super_admin]
+        created_at:
+          type: string
+          format: date-time
+
+    # 商品模型
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        category_id:
+          type: integer
+        price:
+          type: number
+          format: float
+        original_price:
+          type: number
+          format: float
+        stock:
+          type: integer
+        sales:
+          type: integer
+        cover_image:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        detail:
+          type: string
+        status:
+          type: integer
+          description: 0-下架，1-上架
+        is_hot:
+          type: integer
+          description: 0-否，1-是
+        is_new:
+          type: integer
+          description: 0-否，1-是
+        is_recommend:
+          type: integer
+          description: 0-否，1-是
+        created_at:
+          type: string
+          format: date-time
+
+    # 分类模型
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        sort_order:
+          type: integer
+        parent_id:
+          type: integer
+        status:
+          type: integer
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+
+    # 轮播图模型
+    Banner:
+      type: object
+      properties:
+        id:
+          type: integer
+        image_url:
+          type: string
+        link_url:
+          type: string
+        sort_order:
+          type: integer
+        status:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    # 购物车模型
+    Cart:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        product_id:
+          type: integer
+        quantity:
+          type: integer
+        product:
+          $ref: '#/components/schemas/Product'
+
+    # 购物车响应
+    CartResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cart'
+        total:
+          type: number
+          format: float
+        count:
+          type: integer
+
+    # 收货地址模型
+    Address:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        name:
+          type: string
+        phone:
+          type: string
+        province:
+          type: string
+        city:
+          type: string
+        district:
+          type: string
+        detail:
+          type: string
+        is_default:
+          type: integer
+        full_address:
+          type: string
+
+    # 订单项模型
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        order_id:
+          type: integer
+        product_id:
+          type: integer
+        product_name:
+          type: string
+        product_image:
+          type: string
+        price:
+          type: number
+          format: float
+        quantity:
+          type: integer
+        subtotal:
+          type: number
+          format: float
+
+    # 订单模型
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+        order_no:
+          type: string
+        user_id:
+          type: integer
+        total_amount:
+          type: number
+          format: float
+        pay_amount:
+          type: number
+          format: float
+        status:
+          type: integer
+          description: 0-待付款，1-已付款，2-已发货，3-已完成，4-已取消
+        status_text:
+          type: string
+        address:
+          type: object
+        remark:
+          type: string
+        pay_time:
+          type: string
+          format: date-time
+        deliver_time:
+          type: string
+          format: date-time
+        finish_time:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+
+    # 评论模型
+    Review:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        product_id:
+          type: integer
+        order_id:
+          type: integer
+        rating:
+          type: integer
+          description: 1-5星
+        content:
+          type: string
+        status:
+          type: integer
+          description: 0-隐藏，1-显示
+        username:
+          type: string
+        product_name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    # 仪表盘统计数据
+    DashboardStats:
+      type: object
+      properties:
+        user_count:
+          type: integer
+        product_count:
+          type: integer
+        order_count:
+          type: integer
+        total_sales:
+          type: number
+          format: float
+        today_orders:
+          type: integer
+        today_sales:
+          type: number
+          format: float
+        pending_orders:
+          type: integer
+        sales_trend:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+              sales:
+                type: number
+              orders:
+                type: integer
+        hot_products:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              sales:
+                type: integer
+              price:
+                type: number
+
+# API 路径
+paths:
+  # ==================== 用户认证 API ====================
+  /api/login:
+    post:
+      tags:
+        - 用户认证
+      summary: 用户登录
+      description: 普通用户登录，获取 JWT Token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  example: user1
+                password:
+                  type: string
+                  example: "123456"
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                      user:
+                        $ref: '#/components/schemas/User'
+        '400':
+          description: 参数错误或用户名密码错误
+
+  /api/register:
+    post:
+      tags:
+        - 用户认证
+      summary: 用户注册
+      description: 新用户注册
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 20
+                  example: newuser
+                password:
+                  type: string
+                  minLength: 6
+                  example: "123456"
+                nickname:
+                  type: string
+                  example: "新用户"
+      responses:
+        '200':
+          description: 注册成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                      user:
+                        $ref: '#/components/schemas/User'
+
+  /api/user/profile:
+    get:
+      tags:
+        - 用户认证
+      summary: 获取用户信息
+      description: 获取当前登录用户的详细信息
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 用户信息
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: 未登录或登录已过期
+
+    put:
+      tags:
+        - 用户认证
+      summary: 更新用户信息
+      description: 更新当前登录用户的个人信息
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nickname:
+                  type: string
+                  example: "小明"
+                phone:
+                  type: string
+                  example: "13800138001"
+                email:
+                  type: string
+                  example: "user@example.com"
+                avatar:
+                  type: string
+                  example: "/static/uploads/avatar.jpg"
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+
+  /api/user/password:
+    put:
+      tags:
+        - 用户认证
+      summary: 修改密码
+      description: 修改当前登录用户的密码
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - old_password
+                - new_password
+              properties:
+                old_password:
+                  type: string
+                  example: "123456"
+                new_password:
+                  type: string
+                  minLength: 6
+                  example: "newpassword"
+      responses:
+        '200':
+          description: 密码修改成功
+
+  # ==================== 商品 API ====================
+  /api/products:
+    get:
+      tags:
+        - 商品
+      summary: 获取商品列表
+      description: 获取商品列表，支持分页、分类筛选、搜索、排序
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: 页码
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 12
+          description: 每页数量
+        - name: category_id
+          in: query
+          schema:
+            type: integer
+          description: 分类ID
+        - name: keyword
+          in: query
+          schema:
+            type: string
+          description: 搜索关键词
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [default, price_asc, price_desc, sales, new]
+          description: 排序方式
+        - name: is_hot
+          in: query
+          schema:
+            type: integer
+          description: 是否热销 0/1
+        - name: is_new
+          in: query
+          schema:
+            type: integer
+          description: 是否新品 0/1
+        - name: is_recommend
+          in: query
+          schema:
+            type: integer
+          description: 是否推荐 0/1
+      responses:
+        '200':
+          description: 商品列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                properties:
+                  data:
+                    properties:
+                      list:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Product'
+
+  /api/products/{product_id}:
+    get:
+      tags:
+        - 商品
+      summary: 获取商品详情
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 商品详情
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Product'
+        '404':
+          description: 商品不存在或已下架
+
+  /api/products/hot:
+    get:
+      tags:
+        - 商品
+      summary: 获取热销商品
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 8
+      responses:
+        '200':
+          description: 热销商品列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+
+  /api/products/new:
+    get:
+      tags:
+        - 商品
+      summary: 获取新品
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 8
+      responses:
+        '200':
+          description: 新品列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+
+  /api/products/recommend:
+    get:
+      tags:
+        - 商品
+      summary: 获取推荐商品
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 8
+      responses:
+        '200':
+          description: 推荐商品列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+
+  # ==================== 分类 API ====================
+  /api/categories:
+    get:
+      tags:
+        - 分类
+      summary: 获取分类列表（树形）
+      description: 获取所有启用的分类，以树形结构返回
+      responses:
+        '200':
+          description: 分类列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Category'
+
+  # ==================== 轮播图 API ====================
+  /api/banners:
+    get:
+      tags:
+        - 轮播图
+      summary: 获取轮播图列表
+      description: 获取所有启用的轮播图
+      responses:
+        '200':
+          description: 轮播图列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Banner'
+
+  # ==================== 购物车 API ====================
+  /api/cart:
+    get:
+      tags:
+        - 购物车
+      summary: 获取购物车列表
+      description: 获取当前用户的购物车商品列表
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 购物车数据
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CartResponse'
+
+    post:
+      tags:
+        - 购物车
+      summary: 添加商品到购物车
+      description: 将商品添加到购物车，如果已存在则增加数量
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - product_id
+              properties:
+                product_id:
+                  type: integer
+                  example: 1
+                quantity:
+                  type: integer
+                  default: 1
+                  example: 2
+      responses:
+        '200':
+          description: 添加成功
+
+  /api/cart/{cart_id}:
+    put:
+      tags:
+        - 购物车
+      summary: 更新购物车数量
+      description: 更新购物车商品数量，quantity为0时删除该商品
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cart_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quantity:
+                  type: integer
+                  example: 3
+      responses:
+        '200':
+          description: 更新成功
+
+    delete:
+      tags:
+        - 购物车
+      summary: 删除购物车项
+      description: 从购物车中删除指定商品
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cart_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 删除成功
+
+  /api/cart/clear:
+    delete:
+      tags:
+        - 购物车
+      summary: 清空购物车
+      description: 清空当前用户的所有购物车商品
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 购物车已清空
+
+  /api/cart/count:
+    get:
+      tags:
+        - 购物车
+      summary: 获取购物车商品数量
+      description: 获取当前用户购物车中的商品种类数量
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 购物车数量
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+
+  # ==================== 收货地址 API ====================
+  /api/addresses:
+    get:
+      tags:
+        - 收货地址
+      summary: 获取收货地址列表
+      description: 获取当前用户的所有收货地址
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 地址列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Address'
+
+    post:
+      tags:
+        - 收货地址
+      summary: 添加收货地址
+      description: 添加新的收货地址
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - phone
+                - province
+                - city
+                - district
+                - detail
+              properties:
+                name:
+                  type: string
+                  example: "张三"
+                phone:
+                  type: string
+                  example: "13800138000"
+                province:
+                  type: string
+                  example: "广东省"
+                city:
+                  type: string
+                  example: "深圳市"
+                district:
+                  type: string
+                  example: "南山区"
+                detail:
+                  type: string
+                  example: "科技园南路88号"
+                is_default:
+                  type: integer
+                  enum: [0, 1]
+                  default: 0
+      responses:
+        '200':
+          description: 添加成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Address'
+
+  /api/addresses/{address_id}:
+    put:
+      tags:
+        - 收货地址
+      summary: 更新收货地址
+      description: 更新指定收货地址信息
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: address_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                phone:
+                  type: string
+                province:
+                  type: string
+                city:
+                  type: string
+                district:
+                  type: string
+                detail:
+                  type: string
+                is_default:
+                  type: integer
+                  enum: [0, 1]
+      responses:
+        '200':
+          description: 更新成功
+
+    delete:
+      tags:
+        - 收货地址
+      summary: 删除收货地址
+      description: 删除指定收货地址
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: address_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 删除成功
+
+  # ==================== 订单 API ====================
+  /api/orders:
+    get:
+      tags:
+        - 订单
+      summary: 获取用户订单列表
+      description: 获取当前用户的订单列表，支持按状态筛选
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: status
+          in: query
+          schema:
+            type: integer
+            enum: [0, 1, 2, 3, 4]
+          description: 0-待付款，1-已付款，2-已发货，3-已完成，4-已取消
+      responses:
+        '200':
+          description: 订单列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                properties:
+                  data:
+                    properties:
+                      list:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Order'
+
+    post:
+      tags:
+        - 订单
+      summary: 创建订单
+      description: 从购物车创建订单，支持选择部分商品或全部商品
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - address_id
+              properties:
+                address_id:
+                  type: integer
+                  description: 收货地址ID
+                  example: 1
+                remark:
+                  type: string
+                  description: 订单备注
+                  example: "请尽快发货"
+                cart_ids:
+                  type: array
+                  items:
+                    type: integer
+                  description: 要结算的购物车ID列表，不传则结算全部
+                  example: [1, 2, 3]
+      responses:
+        '200':
+          description: 订单创建成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Order'
+
+  /api/orders/{order_id}:
+    get:
+      tags:
+        - 订单
+      summary: 获取订单详情
+      description: 获取指定订单的详细信息
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 订单详情
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Order'
+
+  /api/orders/{order_id}/pay:
+    post:
+      tags:
+        - 订单
+      summary: 支付订单（模拟）
+      description: 模拟支付订单，将订单状态改为已付款
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 支付成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Order'
+
+  /api/orders/{order_id}/confirm:
+    post:
+      tags:
+        - 订单
+      summary: 确认收货
+      description: 确认收到商品，将订单状态改为已完成
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 确认收货成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Order'
+
+  /api/orders/{order_id}/cancel:
+    post:
+      tags:
+        - 订单
+      summary: 取消订单
+      description: 取消待付款或已付款的订单，恢复库存
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 取消成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Order'
+
+  # ==================== 评论 API ====================
+  /api/products/{product_id}/reviews:
+    get:
+      tags:
+        - 评论
+      summary: 获取商品评论列表
+      description: 获取指定商品的评论列表及评分统计
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: 评论列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      list:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Review'
+                      total:
+                        type: integer
+                      page:
+                        type: integer
+                      pages:
+                        type: integer
+                      avg_rating:
+                        type: number
+                        format: float
+                      total_reviews:
+                        type: integer
+
+  /api/reviews:
+    post:
+      tags:
+        - 评论
+      summary: 发表评论
+      description: 对商品进行评价，一个商品只能评价一次
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - product_id
+                - content
+              properties:
+                product_id:
+                  type: integer
+                  example: 1
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                  default: 5
+                  example: 5
+                content:
+                  type: string
+                  example: "商品质量很好，物流也很快！"
+                order_id:
+                  type: integer
+                  description: 关联的订单ID
+      responses:
+        '200':
+          description: 评价成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Review'
+
+  # ==================== 管理员认证 API ====================
+  /api/admin/login:
+    post:
+      tags:
+        - 管理员认证
+      summary: 管理员登录
+      description: 管理员登录，获取 JWT Token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  example: admin
+                password:
+                  type: string
+                  example: admin123
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                      admin:
+                        $ref: '#/components/schemas/Admin'
+
+  /api/admin/profile:
+    get:
+      tags:
+        - 管理员认证
+      summary: 获取管理员信息
+      description: 获取当前登录管理员的详细信息
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 管理员信息
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Admin'
+
+  # ==================== 管理端-仪表盘 API ====================
+  /api/admin/dashboard/stats:
+    get:
+      tags:
+        - 管理端-仪表盘
+      summary: 获取仪表盘统计数据
+      description: 获取系统统计数据、销售趋势、热销商品等
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 统计数据
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/DashboardStats'
+
+  # ==================== 管理端-商品 API ====================
+  /api/admin/products:
+    get:
+      tags:
+        - 管理端-商品
+      summary: 获取商品列表
+      description: 管理端获取商品列表，支持筛选和分页
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 15
+        - name: category_id
+          in: query
+          schema:
+            type: integer
+        - name: keyword
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: integer
+            enum: [0, 1]
+      responses:
+        '200':
+          description: 商品列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                properties:
+                  data:
+                    properties:
+                      list:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Product'
+
+    post:
+      tags:
+        - 管理端-商品
+      summary: 创建商品
+      description: 创建新商品
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: "iPhone 15 Pro"
+                category_id:
+                  type: integer
+                  example: 1
+                price:
+                  type: number
+                  format: float
+                  example: 7999.00
+                original_price:
+                  type: number
+                  format: float
+                  example: 8999.00
+                stock:
+                  type: integer
+                  example: 100
+                cover_image:
+                  type: string
+                  example: "/static/uploads/iphone15.jpg"
+                images:
+                  type: array
+                  items:
+                    type: string
+                  example: ["/static/uploads/iphone15_1.jpg", "/static/uploads/iphone15_2.jpg"]
+                description:
+                  type: string
+                  example: "最新款iPhone，钛金属设计"
+                detail:
+                  type: string
+                  example: "<p>详细介绍...</p>"
+                status:
+                  type: integer
+                  enum: [0, 1]
+                  default: 1
+                is_hot:
+                  type: integer
+                  enum: [0, 1]
+                  default: 0
+                is_new:
+                  type: integer
+                  enum: [0, 1]
+                  default: 0
+                is_recommend:
+                  type: integer
+                  enum: [0, 1]
+                  default: 0
+      responses:
+        '200':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Product'
+
+  /api/admin/products/{product_id}:
+    get:
+      tags:
+        - 管理端-商品
+      summary: 获取商品详情
+      description: 获取指定商品的详细信息
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 商品详情
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Product'
+
+    put:
+      tags:
+        - 管理端-商品
+      summary: 更新商品
+      description: 更新指定商品信息
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                category_id:
+                  type: integer
+                price:
+                  type: number
+                  format: float
+                original_price:
+                  type: number
+                  format: float
+                stock:
+                  type: integer
+                cover_image:
+                  type: string
+                images:
+                  type: array
+                  items:
+                    type: string
+                description:
+                  type: string
+                detail:
+                  type: string
+                status:
+                  type: integer
+                  enum: [0, 1]
+                is_hot:
+                  type: integer
+                  enum: [0, 1]
+                is_new:
+                  type: integer
+                  enum: [0, 1]
+                is_recommend:
+                  type: integer
+                  enum: [0, 1]
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Product'
+
+    delete:
+      tags:
+        - 管理端-商品
+      summary: 删除商品
+      description: 删除指定商品
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 删除成功
+
+  /api/admin/upload:
+    post:
+      tags:
+        - 管理端-商品
+      summary: 上传文件
+      description: 上传商品图片等文件
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: 图片文件（支持 png, jpg, jpeg, gif, webp）
+      responses:
+        '200':
+          description: 上传成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      url:
+                        type: string
+                        example: "/static/uploads/abc123.jpg"
+
+  # ==================== 管理端-分类 API ====================
+  /api/admin/categories:
+    get:
+      tags:
+        - 管理端-分类
+      summary: 获取分类列表（树形）
+      description: 获取所有分类，以树形结构返回
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 分类列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Category'
+
+    post:
+      tags:
+        - 管理端-分类
+      summary: 创建分类
+      description: 创建新分类
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: "手机数码"
+                sort_order:
+                  type: integer
+                  default: 0
+                  example: 1
+                parent_id:
+                  type: integer
+                  default: 0
+                  description: 0表示顶级分类
+                  example: 0
+                status:
+                  type: integer
+                  enum: [0, 1]
+                  default: 1
+      responses:
+        '200':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Category'
+
+  /api/admin/categories/flat:
+    get:
+      tags:
+        - 管理端-分类
+      summary: 获取分类列表（扁平）
+      description: 获取所有分类，以扁平数组返回
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 分类列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Category'
+
+  /api/admin/categories/{category_id}:
+    put:
+      tags:
+        - 管理端-分类
+      summary: 更新分类
+      description: 更新指定分类信息
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: category_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                sort_order:
+                  type: integer
+                parent_id:
+                  type: integer
+                status:
+                  type: integer
+                  enum: [0, 1]
+      responses:
+        '200':
+          description: 更新成功
+
+    delete:
+      tags:
+        - 管理端-分类
+      summary: 删除分类
+      description: 删除指定分类，有子分类时无法删除
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: category_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 删除成功
+        '400':
+          description: 该分类下有子分类，无法删除
+
+  # ==================== 管理端-订单 API ====================
+  /api/admin/orders:
+    get:
+      tags:
+        - 管理端-订单
+      summary: 获取订单列表
+      description: 管理端获取所有订单列表，支持筛选和分页
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 15
+        - name: status
+          in: query
+          schema:
+            type: integer
+            enum: [0, 1, 2, 3, 4]
+        - name: order_no
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 订单列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                properties:
+                  data:
+                    properties:
+                      list:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Order'
+
+  /api/admin/orders/{order_id}:
+    get:
+      tags:
+        - 管理端-订单
+      summary: 获取订单详情
+      description: 获取指定订单的详细信息
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 订单详情
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Order'
+
+  /api/admin/orders/{order_id}/deliver:
+    post:
+      tags:
+        - 管理端-订单
+      summary: 订单发货
+      description: 对已付款订单进行发货操作
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 发货成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Order'
+
+  /api/admin/orders/{order_id}/cancel:
+    post:
+      tags:
+        - 管理端-订单
+      summary: 取消订单
+      description: 管理员取消订单，恢复库存
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 取消成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Order'
+
+  # ==================== 管理端-用户 API ====================
+  /api/admin/users:
+    get:
+      tags:
+        - 管理端-用户
+      summary: 获取用户列表
+      description: 获取所有注册用户列表，支持搜索和筛选
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 15
+        - name: keyword
+          in: query
+          schema:
+            type: string
+          description: 搜索用户名/昵称/手机号
+        - name: status
+          in: query
+          schema:
+            type: integer
+            enum: [0, 1]
+      responses:
+        '200':
+          description: 用户列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                properties:
+                  data:
+                    properties:
+                      list:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/User'
+
+  /api/admin/users/{user_id}:
+    get:
+      tags:
+        - 管理端-用户
+      summary: 获取用户详情
+      description: 获取指定用户的详细信息
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 用户详情
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+
+  /api/admin/users/{user_id}/status:
+    put:
+      tags:
+        - 管理端-用户
+      summary: 更新用户状态
+      description: 启用或禁用用户账号
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: integer
+                  enum: [0, 1]
+                  description: 0-禁用，1-启用
+                  example: 1
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+
+  # ==================== 管理端-轮播图 API ====================
+  /api/admin/banners:
+    get:
+      tags:
+        - 管理端-轮播图
+      summary: 获取轮播图列表
+      description: 获取所有轮播图
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 轮播图列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Banner'
+
+    post:
+      tags:
+        - 管理端-轮播图
+      summary: 创建轮播图
+      description: 创建新轮播图
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - image_url
+              properties:
+                image_url:
+                  type: string
+                  example: "/static/uploads/banner1.jpg"
+                link_url:
+                  type: string
+                  example: "/product/1"
+                sort_order:
+                  type: integer
+                  default: 0
+                  example: 1
+                status:
+                  type: integer
+                  enum: [0, 1]
+                  default: 1
+      responses:
+        '200':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Banner'
+
+  /api/admin/banners/{banner_id}:
+    put:
+      tags:
+        - 管理端-轮播图
+      summary: 更新轮播图
+      description: 更新指定轮播图信息
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: banner_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                image_url:
+                  type: string
+                link_url:
+                  type: string
+                sort_order:
+                  type: integer
+                status:
+                  type: integer
+                  enum: [0, 1]
+      responses:
+        '200':
+          description: 更新成功
+
+    delete:
+      tags:
+        - 管理端-轮播图
+      summary: 删除轮播图
+      description: 删除指定轮播图
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: banner_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 删除成功
+
+  # ==================== 管理端-评论 API ====================
+  /api/admin/reviews:
+    get:
+      tags:
+        - 管理端-评论
+      summary: 获取评论列表
+      description: 管理端获取所有评论列表，支持筛选和搜索
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 15
+        - name: status
+          in: query
+          schema:
+            type: integer
+            enum: [0, 1]
+        - name: keyword
+          in: query
+          schema:
+            type: string
+          description: 搜索商品名称或评论内容
+      responses:
+        '200':
+          description: 评论列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                properties:
+                  data:
+                    properties:
+                      list:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Review'
+
+  /api/admin/reviews/{review_id}/status:
+    put:
+      tags:
+        - 管理端-评论
+      summary: 更新评论状态
+      description: 显示或隐藏评论
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: review_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: integer
+                  enum: [0, 1]
+                  description: 0-隐藏，1-显示
+                  example: 1
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Review'
+
+  /api/admin/reviews/{review_id}:
+    delete:
+      tags:
+        - 管理端-评论
+      summary: 删除评论
+      description: 删除指定评论
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: review_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 删除成功
+
+tags:
+  - name: 用户认证
+    description: 普通用户登录注册相关接口
+  - name: 商品
+    description: 商品浏览相关接口（无需登录）
+  - name: 分类
+    description: 商品分类相关接口（无需登录）
+  - name: 轮播图
+    description: 首页轮播图相关接口（无需登录）
+  - name: 购物车
+    description: 购物车管理相关接口（需登录）
+  - name: 收货地址
+    description: 收货地址管理相关接口（需登录）
+  - name: 订单
+    description: 订单管理相关接口（需登录）
+  - name: 评论
+    description: 商品评论相关接口
+  - name: 管理员认证
+    description: 管理员登录相关接口
+  - name: 管理端-仪表盘
+    description: 数据统计相关接口（需管理员权限）
+  - name: 管理端-商品
+    description: 商品管理相关接口（需管理员权限）
+  - name: 管理端-分类
+    description: 分类管理相关接口（需管理员权限）
+  - name: 管理端-订单
+    description: 订单管理相关接口（需管理员权限）
+  - name: 管理端-用户
+    description: 用户管理相关接口（需管理员权限）
+  - name: 管理端-轮播图
+    description: 轮播图管理相关接口（需管理员权限）
+  - name: 管理端-评论
+    description: 评论管理相关接口（需管理员权限）

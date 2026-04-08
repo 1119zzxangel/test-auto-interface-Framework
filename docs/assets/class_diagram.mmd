@@ -1,0 +1,50 @@
+classDiagram
+    class SendRequest {
+        - cookie
+        + get(url, data, header)
+        + post(url, data, header)
+        + send_request(**kwargs)
+        + run_main(name, url, case_name, header, method, cookies=None, file=None, **kwargs)
+    }
+
+    class RequestBase_apiutil {
+        - run: SendRequest
+        - conf: OperationConfig
+        - read: ReadYamlData
+        - asserts: Assertions
+        + replace_load(data)
+        + specification_yaml(base_info, test_case)
+        + extract_data(...)
+    }
+
+    class RequestBase_business {
+        - run: SendRequest
+        - read: ReadYamlData
+        - conf: OperationConfig
+        + replace_load(data)
+        + specification_yaml(case_info)
+    }
+
+    class ReadYamlData {
+        + get_yaml_data()
+        + write_yaml_data(value)
+        + clear_yaml_data()
+        + get_extract_yaml(node_name, second_node_name=None)
+    }
+
+    class RecordLog {
+        + output_logging()
+    }
+
+    class Assertions {
+        + assert_result(expected, actual, status_code)
+    }
+
+    SendRequest --> ReadYamlData : "uses / write/read extract.yaml"
+    RequestBase_apiutil --> SendRequest : "delegates requests"
+    RequestBase_business --> SendRequest : "delegates requests"
+    RequestBase_apiutil --> ReadYamlData : "writes extracted values"
+    RequestBase_business --> ReadYamlData : "writes extracted values"
+    RequestBase_apiutil --> Assertions : "calls assertions"
+    RequestBase_business --> Assertions : "calls assertions"
+    RecordLog <|-- logs

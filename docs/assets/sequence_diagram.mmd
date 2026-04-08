@@ -1,0 +1,24 @@
+sequenceDiagram
+    participant PyTest
+    participant RootConftest as RootConftest
+    participant TcConftest as TcConftest
+    participant RequestBase as RequestBase
+    participant SendRequest as SendRequest
+    participant HTTPClient as "requests.Session"
+    participant ExternalAPI as ExternalAPI
+    participant ReadYaml as ReadYamlData
+    participant Assertions as Assertions
+
+    PyTest->>RootConftest: load fixtures (clear_extract)
+    PyTest->>TcConftest: load fixtures (system_login)
+    PyTest->>RequestBase: specification_yaml(baseInfo, testCase)
+    RequestBase->>SendRequest: run_main(..., method, url, header, cookies, **params)
+    SendRequest->>HTTPClient: session.request(method, url, headers, cookies, files, timeout)
+    HTTPClient->>ExternalAPI: send HTTP request
+    ExternalAPI-->>HTTPClient: response
+    HTTPClient-->>SendRequest: Response object
+    SendRequest->>ReadYaml: write_yaml_data(extracted_values)
+    SendRequest-->>RequestBase: Response
+    RequestBase->>Assertions: assert_result(expected, response_json, status_code)
+    RequestBase-->>PyTest: assertion result
+    PyTest->>PyTest: collect results -> report generation (allure/tmreport)

@@ -1,0 +1,11 @@
+name: "获取商品列表"
+description: "测试获取商品列表功能，支持分页、分类筛选、搜索、排序"
+url: "http://localhost:5000/api/products"
+method: "GET"
+params:
+  page: 1
+  per_page: 12
+validate:
+  - equals: {"code": 200}
+  - contains: {"text": "list"}
+  - contains: {"text": "total"}
