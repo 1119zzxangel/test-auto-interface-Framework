@@ -49,3 +49,9 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
     if dd_msg:
         send_dd_msg(summary)## 如果配置里开了钉钉通知，就发消息
 # 测试前自动清环境，测试后自动统计结果，开启开关就自动发钉钉通知。
+
+# 存放全项目通用的全局 fixture / 钩子，例如：
+# 1. 全局环境清理、日志初始化
+# 2. 钉钉 / 邮件通知钩子
+# 3. 全局配置加载、敏感信息处理
+# 4. 全项目通用的前后置
