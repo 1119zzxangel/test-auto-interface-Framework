@@ -88,7 +88,3 @@ allure serve ./report/temp
 - YAML 读写：`common/readyaml.py`
 - 全局配置：`conf/setting.py`
 - 固件与报告摘要：`conftest.py`
-
-如果你希望，我可以：
-- 生成 `requirements.txt`（基于 `pyproject.toml`），
-- 或者把 README_run.md 翻译为英文或转换为更详细的开发者文档。

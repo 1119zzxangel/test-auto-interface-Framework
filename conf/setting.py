@@ -23,7 +23,7 @@ REPORT_TYPE = 'allure'
 # 是否发送钉钉消息
 dd_msg = False
 
-# 文件路径
+# 文件路径,通过 os.path.join 动态拼接项目根目录 DIR_BASE，生成所有关键文件 / 目录的绝对路径
 FILE_PATH = {
     'CONFIG': os.path.join(DIR_BASE, 'conf/config.ini'),
     'LOG': os.path.join(DIR_BASE, 'logs'),
@@ -36,10 +36,15 @@ FILE_PATH = {
     'EXCEL': os.path.join(DIR_BASE, 'data', '测试数据.xls')
 }
 
-# 默认请求头信息
+# 默认请求头信息,定义接口请求的默认全局请求头，所有接口请求默认携带该头信息
 LOGIN_HEADER = {
     'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
     'Accept': 'application/json, text/plain, */*',
     'Accept-Language': 'zh-CN,zh;q=0.9',
     'Connection': 'keep-alive'
 }
+
+# 路径基准：DIR_BASE 定义项目根目录，所有路径基于此动态生成
+# 配置读取：operationConfig.py 读取 FILE_PATH['CONFIG'] 路径下的 config.ini
+# 全局调用：框架中所有需要路径 / 请求头 / 开关的模块（接口请求、日志、报告、通知），都直接导入 setting.py 中的常量
+# 运行规则：pytest 运行时，优先读取 setting.py 中的路径与默认配置，再结合 config.ini 环境参数执行
