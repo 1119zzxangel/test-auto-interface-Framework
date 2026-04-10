@@ -1,15 +1,15 @@
-allure-pytest>=2.13.5
-clickhouse-sqlalchemy>=0.3.2
-python-jenkins>=1.7.0
-jsonpath>=0.82.2
-pandas>=2.2.3
-paramiko
-pymongo
-pymysql
-pytest>=8.3.2
-pyyaml>=6.0.2
-redis>=5.2.1
-requests>=2.32.3
-sqlalchemy>=2.0.36
-xlrd>=2.0.1
-xlutils>=2.0.0
+allure-pytest>=2.13.5          # 生成美观可视化的 pytest 自动化测试报告
+clickhouse-sqlalchemy>=0.3.2   # SQLAlchemy 适配 ClickHouse 数据库驱动，支持ORM操作
+python-jenkins>=1.7.0          # Python 操作 Jenkins API，实现任务构建、获取构建结果等
+jsonpath>=0.82.2                # 快速解析、提取 JSON 数据，适用于接口响应提取
+pandas>=2.2.3                   # 数据处理、分析、Excel/CSV 文件读写与数据计算
+paramiko                        # SSH 协议实现，用于远程服务器连接、执行命令、上传下载文件
+pymongo                         # MongoDB 数据库 Python 驱动，用于操作非关系型数据库
+pymysql                         # MySQL 数据库 Python 驱动，用于连接和操作 MySQL
+pytest>=8.3.2                   # Python 单元/自动化测试框架核心，支持用例管理、断言、插件
+pyyaml>=6.0.2                   # 读取、写入 YAML 配置文件，常用于测试配置管理
+redis>=5.2.1                     # Redis 缓存数据库 Python 客户端，用于操作 Redis
+requests>=2.32.3                 # HTTP/HTTPS 请求库，用于接口测试、爬虫、网络请求
+sqlalchemy>=2.0.36              # Python ORM 框架，简化数据库操作，支持多种关系型数据库
+xlrd>=2.0.1                      # 读取 Excel 文件（.xls/.xlsx）
+xlutils>=2.0.0                   # Excel 文件工具库，配合 xlrd/xlwt 实现 Excel 编辑、复制

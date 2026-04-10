@@ -3,6 +3,7 @@ import os
 import sys
 # 动态获取项目根目录，绝对不写死路径，保证项目在不同环境、不同目录下都能正常运行
 DIR_BASE = os.path.dirname(os.path.dirname(__file__))
+# os.path.dirname() → 获取【当前文件所在的文件夹路径】
 sys.path.append(DIR_BASE)
 # sys.path：Python 解释器的模块搜索路径列表，Python 只会从这个列表里的目录找要导入的模块
 # append(DIR_BASE)：把项目根目录添加到 Python 的搜索路径中
@@ -22,7 +23,7 @@ REPORT_TYPE = 'allure'
 
 # 是否发送钉钉消息
 dd_msg = False
-
+# os.path.join() → 拼接路径【自动兼容 Windows/Mac/Linux】
 # 文件路径,通过 os.path.join 动态拼接项目根目录 DIR_BASE，生成所有关键文件 / 目录的绝对路径
 FILE_PATH = {
     'CONFIG': os.path.join(DIR_BASE, 'conf/config.ini'),
